@@ -1,113 +1,142 @@
-import Image from "next/image";
+'use client'
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function Home() {
+function App() {
+  const [date, setDate] = useState([]);
+  const [temperature, setTemperature] = useState('');
+  const [weather, setWeather] = useState('');
+  const [currentGenere, setGenere] = useState([]);
+  const [location, setLocation] = useState({ longitude: '0', latitude: '0' });
+  const [loading, setLoading] = useState(true);
+  const [myErr, setMyErr] = useState('');
+
+  
+
+  const handleError = (err) => {
+    setMyErr('Looks like our services could be down refresh the page');
+  };
+
+  const giveIdea = async (temp, weather, city, state) => {
+    try {
+      
+      const response = await axios.post('/api/sendprompt', {
+        dateIdeaRequest: `return in nothing but JSON format whats a good date idea for ${currentGenere} near/in ${city} ${state} for ${temp} degree weather with ${weather} I want two properties of name (the thing to do) and location and I want 5 of them location max of 4 words`,
+      });
+      console.log(response)
+      setDate(response.data.object);
+      setLoading(false);
+      
+      setLoading(false);
+    } catch (err) {
+      handleError(err);
+      console.log(err)
+    }
+  };
+
+  const showPosition = async (position) => {
+    try {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const urls = '/api/'+ JSON.stringify(latitude) + ',' +  JSON.stringify(longitude)
+      const response = await axios.get(urls)
+      setTemperature(response.data.temperature);
+      setWeather(response.data.weather);
+      const url = '/api/location/'+ JSON.stringify(latitude) + ',' +  JSON.stringify(longitude)
+      const getLocation = await axios.get(url)
+      const myLocation = getLocation.data.data
+      console.log(myLocation)
+      setLocation({ state: myLocation.address.state, city: myLocation.address.city });
+      console.log('here')
+      giveIdea(response.data.temperature, response.data.weather, myLocation.address.state, myLocation.address.city);
+    } catch (err) {
+      console.log(err)
+      handleError(err);
+    }
+  };
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(showPosition);
+  }, [currentGenere]);
+  const addGenere = (option) => {
+    setLoading(true);
+    setDate([]);
+    setGenere((prev) => [...prev, option])
+  };
+
+  function removeGenere(option){
+    setGenere((prev) => prev.filter((prevGenere) => prevGenere !== option))
+}
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div class="bg-yellow-100 min-h-screen flex flex-col items-center justify-center">
+      <h1 class="text-4xl font-bold mb-4 text-orange-600">Date Designed</h1>
+    <div class="container mx-auto p-6 pt-20 shadow rounded bg-white bg-opacity-50">
+      <div class="flex flex-wrap gap-4 mb-4">
+        {currentGenere.map((genre, index) => (
+          <span
+            key={index}
+            class="bg-yellow-200 py-2 px-4 rounded text-orange-600 text-lg font-bold cursor-pointer"
           >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            {genre ==
+            `Cities/states outside ${location.city} ${location.state} around 100-200 miles` ? (
+              'Travel'
+            ) : (
+              genre
+            )}
+            <span class='ml-4 text-gray-500 cursor-pointer' onClick={() => removeGenere(genre)}>
+              X
+            </span>
+          </span>
+        ))}
+      </div>
+      <div className='flex inline'>
+        <h1 className="text-3xl font-bold mb-4 text-orange-600">The Weather Is {JSON.stringify(temperature).length >= 1 ? JSON.stringify(temperature).slice(0, 2) : ''} Degrees with {weather}</h1>
+        <button 
+          className="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded ml-auto"
+          onClick={() => giveIdea(temperature, weather, location.city, location.state)}
+        >
+          Reload
+        </button>
+      </div>
+      {loading ? (
+        <div class="loading-screen">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array(5).fill().map((_, i) => (
+              <div key={i} class="bg-yellow-200 shadow p-4 rounded h-44 w-full md:w-64 lg:w-80 xl:w-96 animate-pulse"></div>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      ) : (
+        <>
+          {date.length > 0 && (
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {date.map((item) => (
+                <div class="bg-orange-200 shadow p-4 rounded" key={item.name}>
+                  <h2 class="text-lg font-bold text-orange-600">{item.name}</h2>
+                  <p class="text-gray-600">{item.location}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  <div class="bg-orange-200 shadow p-4 rounded max-w-md mx-auto mt-8">
+    <h2 class="text-lg font-bold text-orange-600">Date Genres</h2>
+    <div class="flex flex-wrap gap-4">
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('Romantic')}>Romantic</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('Adventure')}>Adventure</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('Casual')}>Casual</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('Stay at home')}>Stay at home</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('Cheap')}>Cheaper</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('Expensive')}>Expensive</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere(`Cities/states outside ${location.city} ${location.state} around 100-200 miles`)}>Travel to near cities</button>
+      <button class="bg-yellow-200 py-2 px-4 rounded text-orange-600" onClick={() => addGenere('First Date')}>First Date</button>
+    </div>
+  </div>
+</div>
   );
 }
+
+export default App;
