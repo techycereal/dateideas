@@ -27,7 +27,7 @@ function App() {
       setDate(response.data.object);
       setLoading(false);
       
-      setLoading(false);
+      setLoading(false); 
     } catch (err) {
       handleError(err);
       console.log(err)
