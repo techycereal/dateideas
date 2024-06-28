@@ -15,4 +15,4 @@
 - **Styling**: Tailwind CSS
 - **API**: LocationIQ, OpenWeather API, Custom AI Prompt API
 
-# Also part of the project the backend
+**The backend** https://github.com/techycereal/worker_date
