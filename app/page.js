@@ -116,7 +116,7 @@ function App() {
       <div className="bg-orange-200 shadow-lg p-6 rounded-lg max-w-lg mx-auto mt-8">
         <h4 className="text-xl font-bold text-orange-600 mb-4">Date Genres</h4>
         <div className="flex flex-wrap gap-4">
-          {['Romantic', 'Adventure', 'Casual', 'Stay at home', 'Cheap', 'Expensive', 'First Date'].map((genre) => (
+          {['Romantic', 'Adventure', 'Casual', 'Stay at home', 'Cheap', 'Expensive', 'First Date', 'Indoor', 'Outdoor', 'Dinner', 'Lunch', 'Sporty', 'Creative'].map((genre) => (
             <button
               key={genre}
               className="bg-yellow-300 py-2 px-4 rounded-full text-orange-600 shadow-md"
